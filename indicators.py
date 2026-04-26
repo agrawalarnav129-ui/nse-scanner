@@ -64,6 +64,13 @@ def bbands(close, length=BB_PERIOD, std=2.0):
 def compute_indicators(df, benchmark_close):
     out = df.copy()
 
+    # Strip timezone from index — GitHub Actions returns tz-aware NSE data
+    # which conflicts with benchmark's tz-naive index during alignment
+    if out.index.tzinfo is not None:
+        out.index = out.index.tz_localize(None)
+
+    # ... rest of the function unchanged
+
     # EMAs
     out["ema21"]  = ema(out["Close"], EMA_SHORT)
     out["ema50"]  = ema(out["Close"], EMA_MID)
@@ -98,10 +105,18 @@ def compute_indicators(df, benchmark_close):
 
     # Relative Strength vs Nifty
     if benchmark_close is not None:
-        aligned = benchmark_close.reindex(out.index, method="ffill")
-        stock_ret = out["Close"].pct_change(RS_LOOKBACK)
-        bench_ret = aligned.pct_change(RS_LOOKBACK)
-        out["rs_score"] = (stock_ret - bench_ret) * 100
+        try:
+            # Strip timezone from both indexes so they can be compared
+            out.index         = out.index.tz_localize(None) if out.index.tzinfo else out.index
+            bench_index       = benchmark_close.index.tz_localize(None) if benchmark_close.index.tzinfo else benchmark_close.index
+            bench_tz_stripped = pd.Series(benchmark_close.values, index=bench_index)
+            aligned           = bench_tz_stripped.reindex(out.index, method="ffill")
+            stock_ret         = out["Close"].pct_change(RS_LOOKBACK)
+            bench_ret         = aligned.pct_change(RS_LOOKBACK)
+            out["rs_score"]   = (stock_ret - bench_ret) * 100
+        except Exception as e:
+            print(f"  RS score failed: {e} — setting to 0")
+            out["rs_score"]   = 0.0
     else:
         out["rs_score"] = 0.0
 
