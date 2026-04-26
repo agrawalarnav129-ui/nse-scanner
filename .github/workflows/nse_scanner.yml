@@ -2,9 +2,9 @@ name: NSE Daily Scanner
 
 on:
   schedule:
-    - cron: "30 2 * * 1-5"    # 8:00 AM IST (2:30 AM UTC) Mon-Fri
+    - cron: "58 3 * * 1-5"    # 9:28 AM IST (3:58 AM UTC) Mon-Fri
     - cron: "30 8 * * 1-5"    # 2:00 PM IST (8:30 AM UTC) Mon-Fri
-  workflow_dispatch:            # lets you trigger manually from GitHub
+  workflow_dispatch:
 
 jobs:
   run-scanner:
