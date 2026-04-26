@@ -1,9 +1,1 @@
-credentials.json
-*.csv
-scan_*.csv
-logs/
-__pycache__/
-*.pyc
-.venv/
-*.log
-.idea/ 
+ 
