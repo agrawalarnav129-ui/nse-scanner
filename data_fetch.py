@@ -6,7 +6,6 @@ from config import *
 def load_universe():
     df = pd.read_csv(UNIVERSE_FILE)
     symbols = df["Symbol"].dropna().tolist()
-    # Auto-append .NS if not already present
     symbols = [s.strip() + ".NS" if not str(s).strip().endswith(".NS") else s.strip() for s in symbols]
     return symbols
 
@@ -24,12 +23,18 @@ def fetch_stock(symbol, period_days=LOOKBACK_DAYS):
         return None
 
 def fetch_benchmark():
-    try:
-        # ^NSEI = Nifty 50, no .NS suffix needed for indices
-        df = yf.Ticker("^NSEI").history(period=f"{LOOKBACK_DAYS}d", auto_adjust=True)
-        return df["Close"]
-    except Exception:
-        return None
+    # Try multiple tickers — yfinance on cloud IPs sometimes blocks indices
+    candidates = ["^NSEI", "NIFTYBEES.NS", "JUNIORBEES.NS"]
+    for ticker in candidates:
+        try:
+            df = yf.Ticker(ticker).history(period=f"{LOOKBACK_DAYS}d", auto_adjust=True)
+            if df is not None and not df.empty and len(df) > 50:
+                print(f"  Benchmark fetched using: {ticker}")
+                return df["Close"]
+        except Exception:
+            continue
+    print("  WARNING: All benchmark tickers failed. Regime will be UNKNOWN.")
+    return None
 
 def fetch_all(symbols):
     data = {}
@@ -47,7 +52,6 @@ def fetch_all(symbols):
 
     print(f"\n  Done. Successful: {len(data)} | Failed/skipped: {len(failed)}")
     if failed:
-        # Save failed symbols so you can inspect/fix them
         pd.Series(failed).to_csv("failed_symbols.csv", index=False, header=["Symbol"])
         print(f"  Failed symbols saved to failed_symbols.csv")
 
