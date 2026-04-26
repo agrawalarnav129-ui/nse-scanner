@@ -62,6 +62,10 @@ def run_scanner():
         except Exception as e:
             print(f"  Error on {sym}: {e}")
 
+        if not results:
+        print("\n  ERROR: No stocks scored. Check data fetch. Exiting.")
+        return
+
     results_df = pd.DataFrame(results).sort_values("Score", ascending=False)
 
     # 5. Print summary
