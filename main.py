@@ -62,37 +62,32 @@ def run_scanner():
         except Exception as e:
             print(f"  Error on {sym}: {e}")
 
-         if not results:
-            print("\n  ERROR: No stocks scored. Check data fetch. Exiting.")
-            return
+    # 5. Empty results guard — OUTSIDE the for loop, aligned with it
+    if not results:
+        print("\n  ERROR: No stocks scored. Check data fetch. Exiting.")
+        return
 
-         results_df = pd.DataFrame(results).sort_values("Score", ascending=False)
+    results_df = pd.DataFrame(results).sort_values("Score", ascending=False)
 
-
-    # 5. Print summary
+    # 6. Print summary
     tier_a = results_df[results_df["Tier"] == "A"]
     print(f"\nSCAN COMPLETE — {len(results_df)} stocks scored")
     print(f"Tier-A setups: {len(tier_a)}")
     print(f"Top 5:\n{results_df[['Symbol','Score','Tier','Flags']].head()}\n")
 
-    # 6. Save local CSV backup
+    # 7. Save local CSV backup
     ts_str = datetime.now().strftime("%Y%m%d_%H%M")
     results_df.to_csv(f"scan_{ts_str}.csv", index=False)
 
-    # 7. Export to Google Sheets
-    # Save local CSV backup
-    ts_str = datetime.now().strftime("%Y%m%d_%H%M")
-    results_df.to_csv(f"scan_{ts_str}.csv", index=False)
-
-    # Export to Google Sheets
+    # 8. Export to Google Sheets
     print("Exporting to Google Sheets...")
     sh = run_export(results_df, regime)
 
-    # Append to Score History tab in Sheets
+    # 9. Append to Score History tab in Sheets
     print("Updating score history...")
     append_to_history(results_df, sh=sh)
 
-    # Update Rising Score tab
+    # 10. Update Rising Score tab
     export_momentum_of_score_to_sheet(sh, lookback_days=5, min_sessions=3)
 
     print("\nDone.")
