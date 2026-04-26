@@ -4,4 +4,4 @@ numpy
 gspread
 google-auth
 requests
-urllib3
+curl_cffi
