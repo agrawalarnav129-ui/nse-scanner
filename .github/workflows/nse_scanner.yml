@@ -1,0 +1,34 @@
+name: NSE Daily Scanner
+
+on:
+  schedule:
+    - cron: "30 2 * * 1-5"    # 8:00 AM IST (2:30 AM UTC) Mon-Fri
+    - cron: "30 8 * * 1-5"    # 2:00 PM IST (8:30 AM UTC) Mon-Fri
+  workflow_dispatch:            # lets you trigger manually from GitHub
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials.json
+        run: echo '${{ secrets.GOOGLE_CREDS }}' > credentials.json
+
+      - name: Run NSE Scanner
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDS }}
+        run: python main.py
