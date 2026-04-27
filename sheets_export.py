@@ -38,6 +38,19 @@ def to_rows(df, cols):
     subset = sanitize(df[cols])
     return [subset.columns.tolist()] + subset.values.tolist()
 
+def add_chartink_links(ws, df, symbol_col_index=1):
+    """Batch update — single API call for all hyperlinks."""
+    cells = []
+    for i, symbol in enumerate(df["Symbol"], start=2):
+        clean_symbol = str(symbol).replace(".NS", "").replace(".BO", "")
+        url     = f"https://chartink.com/stocks/{clean_symbol.lower()}.html"
+        formula = f'=HYPERLINK("{url}","{symbol}")'
+        cell    = gspread.Cell(row=i, col=symbol_col_index, value=formula)
+        cells.append(cell)
+
+    if cells:
+        ws.update_cells(cells, value_input_option="USER_ENTERED")    
+
 def export_master_scan(sh, results_df):
     ws = sh.worksheet("Master Scan")
     ws.clear()
@@ -47,6 +60,9 @@ def export_master_scan(sh, results_df):
             "Vol_Ratio","ATR_Pct","Pct_52w_High","Timestamp"]
     ws.update(to_rows(results_df, cols))
     ws.freeze(rows=1)
+    # Add Chartink links to Symbol column (col 1)
+    print("  Adding Chartink links to Master Scan...")
+    add_chartink_links(ws, results_df, symbol_col_index=1)
 
 def export_watchlist(sh, results_df):
     ws = sh.worksheet("Watchlist Top30")
@@ -55,6 +71,8 @@ def export_watchlist(sh, results_df):
     cols  = ["Symbol","Close","Score","Tier","Flags","RSI","ADX","Vol_Ratio","RS_vs_Nifty"]
     ws.update(to_rows(top30, cols))
     ws.freeze(rows=1)
+    print("  Adding Chartink links to Watchlist...")
+    add_chartink_links(ws, top30, symbol_col_index=1)
 
 def export_alerts(sh, results_df):
     ws = sh.worksheet("Breakout Alerts")
@@ -63,6 +81,8 @@ def export_alerts(sh, results_df):
     cols   = ["Symbol","Close","Score","Flags","RSI","ADX","Vol_Ratio","ATR_Pct","Timestamp"]
     ws.update(to_rows(alerts, cols))
     ws.freeze(rows=1)
+    print("  Adding Chartink links to Breakout Alerts...")
+    add_chartink_links(ws, alerts, symbol_col_index=1)
 
 def export_regime(sh, regime, timestamp):
     ws = sh.worksheet("Regime Dashboard")
